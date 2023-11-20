@@ -1,6 +1,6 @@
 module github.com/chukwuka-emi/easysync
 
-go 1.21.3
+go 1.21
 
 require (
 	ariga.io/atlas-provider-gorm v0.1.1
