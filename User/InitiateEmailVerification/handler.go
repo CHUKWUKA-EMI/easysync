@@ -9,6 +9,7 @@ import (
 	"time"
 
 	services "github.com/chukwuka-emi/easysync/Services"
+	emailservice "github.com/chukwuka-emi/easysync/Services/email"
 	"github.com/chukwuka-emi/easysync/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -27,9 +28,9 @@ func Handler(c *gin.Context) {
 
 	code := utils.Generate8DigitsNumber()
 
-	email := &services.EmailService{
-		Sender:    services.EmailUser{Name: "EasySync", Email: os.Getenv("SENDER_EMAIL")},
-		Recipient: services.EmailUser{Name: "", Email: input.Email},
+	email := &emailservice.EmailService{
+		Sender:    emailservice.EmailUser{Name: "EasySync", Email: os.Getenv("SENDER_EMAIL")},
+		Recipient: emailservice.EmailUser{Name: "", Email: input.Email},
 		Subject:   fmt.Sprintf("EasySync Confirmation Code: %d", code),
 		Content: fmt.Sprintf(`<h1>Confirm your email address</h1>
 		          <p>Use the code below to confirm your email address</p>

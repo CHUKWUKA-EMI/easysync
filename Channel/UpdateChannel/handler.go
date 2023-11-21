@@ -3,7 +3,6 @@ package updatechannel
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	channel "github.com/chukwuka-emi/easysync/Channel"
@@ -39,12 +38,8 @@ func Handler(ctx *gin.Context) {
 	}
 
 	var channelData channel.Channel
-	channelID, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	fmt.Println("CHANNEL ID", channelID)
+	channelID := ctx.Param("id")
+
 	queryResult := data.DB.Where("id=?", channelID).First(&channelData)
 	if queryResult.RowsAffected == 0 {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Channel not found."})

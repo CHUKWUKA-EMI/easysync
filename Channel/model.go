@@ -1,15 +1,19 @@
 package channel
 
-import "gorm.io/gorm"
+import (
+	data "github.com/chukwuka-emi/easysync/Data"
+	"github.com/google/uuid"
+)
 
 // Channel Model
 type Channel struct {
-	gorm.Model
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Type        Type   `json:"type"`
-	OwnerEmail  string `json:"ownerEmail"`
-	WorkspaceID uint   `json:"workspaceId"`
+	// gorm.Model
+	data.BaseModel
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Type        Type      `json:"type"`
+	OwnerEmail  string    `json:"ownerEmail"`
+	WorkspaceID uuid.UUID `gorm:"type:char(36);" json:"workspaceId"`
 }
 
 // Type ...

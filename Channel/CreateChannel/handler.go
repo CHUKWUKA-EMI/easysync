@@ -39,7 +39,7 @@ func Handler(ctx *gin.Context) {
 		return
 	}
 
-	if input.WorkspaceID == 0 {
+	if input.WorkspaceID.String() == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "workspaceId is missing in request body."})
 		return
 	}

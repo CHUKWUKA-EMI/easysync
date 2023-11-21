@@ -1,26 +1,24 @@
-package createuser
+package accountlogin
 
 import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 
-	channel "github.com/chukwuka-emi/easysync/Channel"
 	data "github.com/chukwuka-emi/easysync/Data"
 	services "github.com/chukwuka-emi/easysync/Services"
 	"github.com/chukwuka-emi/easysync/Services/auth"
 	user "github.com/chukwuka-emi/easysync/User"
 
-	workspace "github.com/chukwuka-emi/easysync/Workspace"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 var ctx = context.Background()
 
 // Handler ...
 func Handler(httpContext *gin.Context) {
-	var input createUserRequest
+	var input accountLoginRequest
 
 	err := httpContext.ShouldBindJSON(&input)
 
@@ -32,62 +30,56 @@ func Handler(httpContext *gin.Context) {
 	_, err = services.RedisClient.Get(ctx, input.Email).Result()
 	if err != nil {
 		if err.Error() == "redis: nil" {
-			httpContext.JSON(http.StatusBadRequest, gin.H{"error": "Confirmation code has expired"})
+			httpContext.JSON(http.StatusBadRequest, gin.H{"error": "login code has expired"})
 			return
 		}
 
 		httpContext.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	userObj := user.User{
-		Email:            input.Email,
-		IsEmailConfirmed: true,
-		OnboardingStep:   user.SetWorkspaceName,
-		ProfileState:     user.ProfileActive,
-		Roles: []user.Role{
-			{Name: user.OWNER},
-			{Name: user.ADMIN},
-		},
-		Workspaces: []workspace.Workspace{
-			{
-				Channels: []channel.Channel{
-					{
-						Name:        "company-wide",
-						Description: "General channel",
-						Type:        channel.Public,
-						OwnerEmail:  input.Email,
-					},
-				},
-			},
-		},
-	}
-
-	err = data.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&userObj).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
+	var userData user.User
+	err = data.DB.Preload("Roles").Where("email=?", input.Email).Omit("password").First(&userData).Error
 
 	if err != nil {
+		if strings.Contains(err.Error(), "record not found") {
+			httpContext.JSON(http.StatusNotFound, gin.H{"error": "User's record not found"})
+			return
+		}
 		httpContext.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	authClaims := user.BuildAuthClaims(&userObj)
+	authClaims := user.BuildAuthClaims(&userData)
 
 	authTokens, err := auth.SignJWT(authClaims)
 	if err != nil {
 		httpContext.JSON(http.StatusInternalServerError, gin.H{"error": "The system encountered an error. Please try again"})
 		return
 	}
-	// save refresh token
-	go data.DB.Create(&user.Token{RefreshToken: authTokens.RefreshToken, UserID: userObj.ID})
+
+	var existingTokenData user.Token
+	queryResult := data.DB.Where("user_id=?", userData.ID).First(&existingTokenData)
+
+	if queryResult.Error != nil {
+		if strings.Contains(err.Error(), "record not found") {
+
+			data.DB.Create(&user.Token{RefreshToken: authTokens.RefreshToken, UserID: userData.ID})
+
+		} else {
+			httpContext.JSON(http.StatusInternalServerError,
+				gin.H{"error": err.Error()})
+			return
+		}
+	} else {
+		err = data.DB.Model(&existingTokenData).Updates(&user.Token{RefreshToken: authTokens.RefreshToken}).Error
+		if err != nil {
+			httpContext.JSON(http.StatusInternalServerError, gin.H{"error": "The system encountered an error. Please try again"})
+			return
+		}
+	}
 
 	httpContext.SetCookie("accessToken", authTokens.AccessToken, 3600, "/", os.Getenv("DOMAIN"), false, true)
 	httpContext.SetCookie("refreshToken", authTokens.RefreshToken, 365*24*3600, "/", os.Getenv("DOMAIN"), false, true)
 
-	httpContext.JSON(http.StatusOK, gin.H{"data": &userObj})
+	httpContext.JSON(http.StatusOK, gin.H{"message": "Authentication successful."})
 }

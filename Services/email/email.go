@@ -1,8 +1,7 @@
-package services
+package emailservice
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 
@@ -24,7 +23,7 @@ type EmailService struct {
 }
 
 // SendEmail ...
-func (e EmailService) SendEmail() *http.Response {
+func (e EmailService) SendEmail() (*http.Response, error) {
 	var ctx context.Context
 	config := brevo.NewConfiguration()
 	config.AddDefaultHeader("api-key", os.Getenv("BREVO_API_KEY"))
@@ -40,9 +39,8 @@ func (e EmailService) SendEmail() *http.Response {
 			HtmlContent: e.Content,
 		})
 	if err != nil {
-		log.Fatal("Error sending email", err.Error())
-		os.Exit(1)
+		return nil, err
 	}
 
-	return response
+	return response, nil
 }

@@ -17,6 +17,8 @@ func main() {
 		&user.Role{},
 		&workspace.Workspace{},
 		&channel.Channel{},
+		&workspace.Invite{},
+		&user.Token{},
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)

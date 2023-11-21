@@ -6,15 +6,16 @@ import (
 	"os"
 	"time"
 
+	data "github.com/chukwuka-emi/easysync/Data"
 	"github.com/chukwuka-emi/easysync/Services/auth"
 	workspace "github.com/chukwuka-emi/easysync/Workspace"
 	"github.com/golang-jwt/jwt/v5"
-	"gorm.io/gorm"
+	"github.com/google/uuid"
 )
 
 // User ...
 type User struct {
-	gorm.Model
+	data.BaseModel
 	Email            string                `gorm:"index;not null;" json:"email"`
 	IsEmailConfirmed bool                  `gorm:"default:false;" json:"isEmailConfirmed"`
 	Password         string                `json:"password"`
@@ -46,8 +47,15 @@ const (
 
 // Role ...
 type Role struct {
-	gorm.Model
+	data.BaseModel
 	Name string `gorm:"not null;" json:"name"`
+}
+
+// Token ...
+type Token struct {
+	data.BaseModel
+	RefreshToken string    `json:"refreshToken"`
+	UserID       uuid.UUID `gorm:"type:char(36);" json:"userId"`
 }
 
 const (
@@ -79,13 +87,13 @@ func BuildAuthClaims(userObj *User) auth.Claims {
 
 	authClaims := auth.Claims{
 		User: auth.UserClaims{
-			ID:    int(userObj.ID),
+			ID:    userObj.ID,
 			Email: userObj.Email,
 			Roles: roleClaims,
 		},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    os.Getenv("JWT_ISSUER"),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
