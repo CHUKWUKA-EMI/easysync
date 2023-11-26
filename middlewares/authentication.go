@@ -8,8 +8,8 @@ import (
 	"time"
 
 	data "github.com/chukwuka-emi/easysync/Data"
+	user "github.com/chukwuka-emi/easysync/Features/User"
 	"github.com/chukwuka-emi/easysync/Services/auth"
-	user "github.com/chukwuka-emi/easysync/User"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )

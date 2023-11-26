@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 
 	dbConfig "github.com/chukwuka-emi/easysync/Data"
+	chat "github.com/chukwuka-emi/easysync/Features/Chat"
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 	dbConfig.InitDatabaseConnection()
 
 	registerServices()
+	chat.InitializeChatHub()
 
 	router := gin.Default()
 	router.SetTrustedProxies(nil)

@@ -1,13 +1,11 @@
 package data
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"time"
 
+	"github.com/gocql/gocql"
 	"github.com/google/uuid"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -19,25 +17,31 @@ type BaseModel struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
 }
 
-// DB ...
+// DB points to SQL Database connection ...
 var DB *gorm.DB
+
+// AstraDBSession points to Astra DB (Cassandra) session
+var AstraDBSession *gocql.Session
 
 // InitDatabaseConnection ...
 func InitDatabaseConnection() {
-	db, err := gorm.Open(mysql.New(mysql.Config{
-		DSN:               fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME")),
-		DefaultStringSize: 256,
-	}), &gorm.Config{
-		SkipDefaultTransaction: true,
-	})
+	db, err := connectToSQLDB()
 
 	if err != nil {
 		log.Fatal("Error initializing database connection: ", err.Error())
-		os.Exit(1)
 	}
 
-	println("Database connected!")
+	println("SQL Database connected!")
 	DB = db
+
+	astraDb, err := connectToAstraDB()
+
+	if err != nil {
+		log.Fatalf("unable to connect astraDB session: %v", err)
+	}
+	println("AstraDB Connected!")
+	AstraDBSession = astraDb
+
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.

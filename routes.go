@@ -4,15 +4,18 @@ import (
 	"context"
 	"net/http"
 
-	createchannel "github.com/chukwuka-emi/easysync/Channel/CreateChannel"
-	updatechannel "github.com/chukwuka-emi/easysync/Channel/UpdateChannel"
-	accountlogin "github.com/chukwuka-emi/easysync/User/AccountLogin"
-	createuser "github.com/chukwuka-emi/easysync/User/CreateUser"
-	initiateemailverification "github.com/chukwuka-emi/easysync/User/InitiateEmailVerification"
-	updateuser "github.com/chukwuka-emi/easysync/User/UpdateUser"
-	acceptinvite "github.com/chukwuka-emi/easysync/Workspace/AcceptInvite"
-	invitecollaborator "github.com/chukwuka-emi/easysync/Workspace/InviteCollaborator"
-	updateworkspace "github.com/chukwuka-emi/easysync/Workspace/UpdateWorkspace"
+	addmember "github.com/chukwuka-emi/easysync/Features/Channel/AddMember"
+	createchannel "github.com/chukwuka-emi/easysync/Features/Channel/CreateChannel"
+	updatechannel "github.com/chukwuka-emi/easysync/Features/Channel/UpdateChannel"
+	chat "github.com/chukwuka-emi/easysync/Features/Chat"
+	createconversation "github.com/chukwuka-emi/easysync/Features/Chat/CreateConversation"
+	accountlogin "github.com/chukwuka-emi/easysync/Features/User/AccountLogin"
+	createuser "github.com/chukwuka-emi/easysync/Features/User/CreateUser"
+	initiateemailverification "github.com/chukwuka-emi/easysync/Features/User/InitiateEmailVerification"
+	updateuser "github.com/chukwuka-emi/easysync/Features/User/UpdateUser"
+	acceptinvite "github.com/chukwuka-emi/easysync/Features/Workspace/AcceptInvite"
+	invitecollaborator "github.com/chukwuka-emi/easysync/Features/Workspace/InviteCollaborator"
+	updateworkspace "github.com/chukwuka-emi/easysync/Features/Workspace/UpdateWorkspace"
 	"github.com/chukwuka-emi/easysync/middlewares"
 	"github.com/gin-gonic/gin"
 )
@@ -29,6 +32,7 @@ func handleRoutes(r *gin.Engine) {
 	r.POST("/user", createuser.Handler)
 	r.POST("user/signin", accountlogin.Handler)
 	r.GET("/workspace/invite/:token", acceptinvite.Handler)
+	r.GET("/websocket/init", chat.ChatHub.HandleUpgrade)
 
 	r.Use(middlewares.Authenticate)
 
@@ -37,4 +41,6 @@ func handleRoutes(r *gin.Engine) {
 	r.PATCH("/user", updateuser.Handler)
 	r.POST("/channel", createchannel.Handler)
 	r.PATCH("/channel/:id", updatechannel.Handler)
+	r.POST("/channel/invite", addmember.Handler)
+	r.POST("/conversations", createconversation.Handler)
 }

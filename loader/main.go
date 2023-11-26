@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"ariga.io/atlas-provider-gorm/gormschema"
-	channel "github.com/chukwuka-emi/easysync/Channel"
-	user "github.com/chukwuka-emi/easysync/User"
-	workspace "github.com/chukwuka-emi/easysync/Workspace"
+	channel "github.com/chukwuka-emi/easysync/Features/Channel"
+	user "github.com/chukwuka-emi/easysync/Features/User"
+	workspace "github.com/chukwuka-emi/easysync/Features/Workspace"
 )
 
 func main() {
