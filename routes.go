@@ -9,6 +9,7 @@ import (
 	updatechannel "github.com/chukwuka-emi/easysync/Features/Channel/UpdateChannel"
 	chat "github.com/chukwuka-emi/easysync/Features/Chat"
 	createconversation "github.com/chukwuka-emi/easysync/Features/Chat/CreateConversation"
+	getchats "github.com/chukwuka-emi/easysync/Features/Chat/GetChats"
 	accountlogin "github.com/chukwuka-emi/easysync/Features/User/AccountLogin"
 	createuser "github.com/chukwuka-emi/easysync/Features/User/CreateUser"
 	initiateemailverification "github.com/chukwuka-emi/easysync/Features/User/InitiateEmailVerification"
@@ -43,4 +44,5 @@ func handleRoutes(r *gin.Engine) {
 	r.PATCH("/channel/:id", updatechannel.Handler)
 	r.POST("/channel/invite", addmember.Handler)
 	r.POST("/conversations", createconversation.Handler)
+	r.GET("/conversations/:id/chats", getchats.Handler)
 }

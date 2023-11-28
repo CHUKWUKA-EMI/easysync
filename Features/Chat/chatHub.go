@@ -4,10 +4,8 @@ import (
 	"log"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gocql/gocql"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -19,11 +17,21 @@ type Hub struct {
 	ChannelsMutex sync.Mutex
 }
 
+type actionType string
+
 // Message is the strcuture of a chat payload
 type Message struct {
-	SenderID uuid.UUID `json:"senderId"`
-	Content  string    `json:"content"`
+	ActionType actionType `json:"actionType" binding:"required"`
+	ChatID     uint64     `json:"chatId"`
+	SenderID   uuid.UUID  `json:"senderId"`
+	Content    string     `json:"content"`
 }
+
+const (
+	insertNewMessage actionType = "insertNewMessage"
+	deleteMessage    actionType = "deleteMessage"
+	updateMessage    actionType = "updateMessage"
+)
 
 // ChatHub points to the chat hub
 var ChatHub *Hub
@@ -85,41 +93,32 @@ func handleMessaging(websocketConn *websocket.Conn, conversationID uuid.UUID) {
 		var incomingMessage Message
 		err := websocketConn.ReadJSON(&incomingMessage)
 		if err != nil {
+			log.Println(err)
 			break
 		}
-		chatData := Chat{
-			ID:             uint64(time.Now().UnixMilli()),
-			ConversationID: gocql.UUID(conversationID),
-			SenderID:       gocql.UUID(incomingMessage.SenderID),
-			Message:        incomingMessage.Content,
-			CreatedAt:      time.Now(),
-			UpdatedAt:      time.Now(),
-		}
-		go sendMessage(websocketConn, chatData)
+
+		go sendMessage(websocketConn, conversationID, incomingMessage, incomingMessage.ActionType)
 	}
 }
 
-func sendMessage(websocketConn *websocket.Conn, chatData Chat) {
+func sendMessage(websocketConn *websocket.Conn, conversationID uuid.UUID, incomingMessage Message, actionType actionType) {
 	ChatHub.ChannelsMutex.Lock()
 	defer ChatHub.ChannelsMutex.Unlock()
-	messageChannel, ok := ChatHub.Channels[uuid.UUID(chatData.ConversationID)]
+	messageChannel, ok := ChatHub.Channels[uuid.UUID(conversationID)]
 	if ok {
-		err := saveMessage(chatData)
-		if err != nil {
-			websocketConn.WriteMessage(websocket.TextMessage, []byte("We encountered an error. Please try again"))
-			return
-		}
-		for websocketClient := range messageChannel {
-			if websocketClient != nil {
-				websocketClient.WriteJSON(Chat{
-					ID:             chatData.ID,
-					SenderID:       chatData.SenderID,
-					ConversationID: chatData.ConversationID,
-					Message:        chatData.Message,
-					CreatedAt:      chatData.CreatedAt,
-					UpdatedAt:      chatData.UpdatedAt,
-				})
-			}
+		switch actionType {
+		case insertNewMessage:
+			handleNewChat(websocketConn, incomingMessage, conversationID, messageChannel)
+			break
+		case updateMessage:
+			updateExistingChat(websocketConn, incomingMessage, conversationID, messageChannel)
+			break
+		case deleteMessage:
+			deleteChat(websocketConn, incomingMessage, conversationID, messageChannel)
+			break
+		default:
+			websocketConn.WriteMessage(websocket.TextMessage, []byte("No valid actionType specified"))
+			break
 		}
 	}
 }

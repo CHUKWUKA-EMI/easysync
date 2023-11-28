@@ -13,7 +13,7 @@ func saveMessage(chatData Chat) error {
 		chatData.ID,
 		chatData.ConversationID,
 		chatData.SenderID,
-		chatData.Message,
+		chatData.Content,
 		chatData.CreatedAt,
 		chatData.UpdatedAt,
 	).Exec()

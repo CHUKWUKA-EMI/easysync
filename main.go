@@ -24,6 +24,9 @@ func main() {
 
 	dbConfig.InitDatabaseConnection()
 
+	// dbConfig.CreateConversationTable()
+	// dbConfig.CreateChatsTable()
+
 	registerServices()
 	chat.InitializeChatHub()
 

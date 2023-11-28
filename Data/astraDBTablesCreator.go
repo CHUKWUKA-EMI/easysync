@@ -4,8 +4,8 @@ import "log"
 
 // CreateConversationTable creates conversations table
 func CreateConversationTable() {
-	err := AstraDBSession.Query(`CREATE TABLE easysynk.conversations 
-	       (id uuid, 
+	err := AstraDBSession.Query(`CREATE TABLE easysynk.conversations
+	        (id uuid, 
 			members set<uuid>, 
 			is_open boolean,
 			created_at timestamp,
@@ -31,14 +31,21 @@ func CreateChatsTable() {
 			message text, 
 			created_at timestamp, 
 			updated_at timestamp,
-			PRIMARY KEY ((conversation_id,id),created_at)
-			);`).Exec()
+			PRIMARY KEY (conversation_id,created_at)
+			) WITH CLUSTERING ORDER BY (created_at DESC);`).Exec()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = AstraDBSession.Query(`CREATE INDEX message_idx ON easysynk.chats 
-	       (message);`).Exec()
+	err = AstraDBSession.Query(`CREATE CUSTOM INDEX chat_id_idx ON easysynk.chats 
+	(id) USING 'StorageAttachedIndex';`).Exec()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = AstraDBSession.Query(`CREATE CUSTOM INDEX chat_message_idx ON easysynk.chats 
+	(message) USING 'StorageAttachedIndex' 
+	WITH OPTIONS = {'case_sensitive': 'false', 'normalize': 'true', 'ascii': 'true'}; `).Exec()
 	if err != nil {
 		log.Fatal(err)
 	}
